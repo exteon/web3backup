@@ -1,8 +1,8 @@
 # web3Backup Tool
 
-Homepage: [http://www.exteon.ro/en/products/programming-tools/web3Backup](http://www.exteon.ro/en/products/programming-tools/web3Backup)
+Homepage: [http://www.exteon.ro/en/products/programming-tools/web3backup](http://www.exteon.ro/en/products/programming-tools/web3backup)
 
-**The web33Backup Tool is a tool written in PHP that allows automated backups of parts of a Linux system.**
+**The web3Backup Tool is a tool written in PHP that allows automated backups of parts of a Linux system.**
 
 Its main features are:
 
