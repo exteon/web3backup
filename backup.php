@@ -205,7 +205,7 @@
 				}
 				$dumpFile=$temp.'/svn.dump';
 				echo "Exporting svn repo {$what['path']} to $dumpFile\n";
-				$command="svnadmin dump ".escapeshellarg($what['path'])." > ".escapeshellarg($dumpFile).' 2>&1';
+				$command="svnadmin dump ".escapeshellarg($what['path'])." 2>&1 > ".escapeshellarg($dumpFile);
 				passthru($command,$ret);
 				if($ret){
 					echo "!!!! VCS export failed\n";
@@ -215,12 +215,59 @@
 				if($mode=='incremental'){
 					$incrementals[]=array(
 						'from'=>$temp,
-						'to'=>$to
+						'to'=>$to,
+						'purgeAfter'=>$what['purgeAfter'],
+						'touch'=>true
 					);
 				} else {
 					$archivables[]=array(
 						'from'=>$dumpFile,
 						'to'=>$to.'/svn.dump',
+						'strip'=>$stripAll
+					);
+				}
+				break;
+			case 'vcs/hg':
+				$temp=$prefix.'/vcs';
+				$to='vcs';
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				$temp.='/hg';
+				$to.='/hg';
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				$temp.='/'.keyFromPath($what['path']);
+				$to.='/'.keyFromPath($what['path']);
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				echo "Exporting hg repo {$what['path']} to $temp\n";
+				$command="hg clone --pull -U ".escapeshellarg($what['path'])." ".escapeshellarg($temp)." 2>&1";
+				passthru($command,$ret);
+				if($ret){
+					echo "!!!! VCS export failed\n";
+					echo "!!!! $command\n";
+					$hasWarning=true;
+				}
+				if($mode=='incremental'){
+					$incrementals[]=array(
+						'from'=>$temp,
+						'to'=>$to,
+						'purgeAfter'=>$what['purgeAfter'],
+						'touch'=>true
+					);
+				} else {
+					$archivables[]=array(
+						'from'=>$temp,
+						'to'=>$to.'/hg.dump',
 						'strip'=>$stripAll
 					);
 				}
@@ -260,6 +307,52 @@
 					$dbs=explode(',',$what['dbs']);
 				} else {
 					$dbs=$what['dbs'];
+				}
+				foreach($dbs as $key=>$db){
+				    if(!trim($db)){
+					unset($dbs[$key]);
+				    }
+				}
+				if(!$dbs){
+				    echo "Exporting ALL dbs\n";
+					$command="														\\
+						mysqldump													\\
+							--add-drop-table										\\
+							--add-locks												\\
+							--allow-keywords										\\
+							--comments												\\
+							--compact												\\
+							--create-options										\\
+							--default-character-set=utf8							\\
+							--disable-keys											\\
+							--extended-insert										\\
+							--hex-blob												\\
+							--lock-tables											\\
+							--quote-names											\\
+							--quick													\\
+							--set-charset											\\
+							--tz-utc												\\
+							--verbose												\\
+							--single-transaction 									\\
+							--user=".escapeshellarg($user)." 						\\
+							--password=".escapeshellarg($what['password'])." 		\\
+							--result-file=".escapeshellarg($temp."/all.sql")." 		\\
+							--all-databases\\
+							2>&1
+					";
+					passthru($command,$ret);
+					if($ret){
+						echo "!!!! DB export failed\n";
+						echo "!!!! $command\n";
+						$hasWarning=true;
+					}
+					if($mode!='incremental'){
+						$archivables[]=array(
+							'from'=>$temp."/all.sql",
+							'to'=>$to."/all.sql",
+							'strip'=>$stripAll
+						);
+					}
 				}
 				foreach($dbs as $db){
 					echo "+ $db\n";
@@ -305,7 +398,55 @@
 				if($mode=='incremental'){
 					$incrementals[]=array(
 						'from'=>$temp,
-						'to'=>$to
+						'to'=>$to,
+						'purgeAfter'=>$what['purgeAfter'],
+						'touch'=>true
+					);
+				}
+				break;
+			case 'db/sqlite':
+				$temp=$prefix.'/db';
+				$to='db';
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				$temp.='/sqlite';
+				$to.='/sqlite';
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				$temp.='/'.keyFromPath($what['path']);
+				$to.='/'.keyFromPath($what['path']);
+				if(!prepareFolder($temp)){
+					echo "!!!! ERROR: cannot prepare dir $temp, skipping\n";
+					$hasWarning=true;
+					continue 2;
+				}
+				$dumpFile=$temp.'/sqlite.dump';
+				echo "Exporting sqlite db {$what['path']} to $dumpFile\n";
+				$command="sqlite3 ".escapeshellarg($what['path'])." .dump 2>&1 > ".escapeshellarg($dumpFile);
+				passthru($command,$ret);
+				if($ret){
+					echo "!!!! SQLite export failed\n";
+					echo "!!!! $command\n";
+					$hasWarning=true;
+				}
+				if($mode=='incremental'){
+					$incrementals[]=array(
+						'from'=>$temp,
+						'to'=>$to,
+						'purgeAfter'=>$what['purgeAfter'],
+						'touch'=>true
+					);
+				} else {
+					$archivables[]=array(
+						'from'=>$dumpFile,
+						'to'=>$to.'/sqlite.dump',
+						'strip'=>$stripAll
 					);
 				}
 				break;
@@ -324,7 +465,8 @@
 					}
 					$incrementals[]=array(
 						'from'=>$path,
-						'to'=>'files/'.keyFromPath($path)
+						'to'=>'files/'.keyFromPath($path),
+						'purgeAfter'=>$what['purgeAfter']
 					);
 				} else {
 					$archivables[]=array(
@@ -494,12 +636,33 @@
 			echo "!!!! ERROR: Cannot create dir $toFull\n";
 			$hasWarning=true;
 		}
-		$command='rdiff-backup --backup-mode '.escapeshellarg($incremental['from']).' '.$toFull.' 2>&1';
+		if($incremental['touch']){
+			$command='find '.escapeshellarg($incremental['from']).' -exec touch -d 1971-01-01 "{}" \\;';
+			echo "     Touching\n";
+			passthru($command,$ret);
+			if($ret){
+				echo "!!!! WARNING: cannot touch\n";
+				echo "!!!! $command";
+				$hasWarning=true;
+			}
+		}
+		$command='rdiff-backup --backup-mode --print-statistics --no-compare-inode';
+		$command.=' '.escapeshellarg($incremental['from']).' '.escapeshellarg($toFull).' 2>&1';
 		passthru($command,$ret);
 		if($ret){
 			echo "!!!! ERROR: rdiff reported errors\n";
 			echo "!!!! $command";
 			$hasWarning=true;
+		}
+		if($incremental['purgeAfter']){
+			echo "     Purging diffs older than {$incremental['purgeAfter']} days\n";
+			$command='rdiff-backup --remove-older-than '.escapeshellarg($incremental['purgeAfter'].'D').' '.escapeshellarg($toFull).' 2>&1';
+			passthru($command,$ret);
+			if($ret){
+				echo "!!!! ERROR: rdiff reported errors\n";
+				echo "!!!! $command";
+				$hasWarning=true;
+			}
 		}
 	}
 	
@@ -603,9 +766,9 @@
 	}
 	
 	function keyFromPath($path){
-		return substr(sha1($path),0,4).'_'.preg_replace('`[^a-zA-Z.0-9]`','_',$path);
+		return preg_replace('`[^a-zA-Z.0-9]`','_',$path).'_'.substr(sha1($path),0,6);
 	}
 	
 	function compareDates(DateTime $d1, DateTime $d2){
 		return strcmp($d1->format('Y-m-d'), $d2->format('Y-m-d'));
-	}
+	}	

@@ -95,8 +95,14 @@
 		 *                     when using with the "file" type that files cannot be incrementally backed up, only 
 		 *                     folders. The "incremental" mode works with DB and VCS dumps. If it is not specified,
 		 *                     regular rotated backups are used. 
+		 *                     When using "incremental" backups, you can specify one more parameter: "purgeAfter"
+		 *                     is the interval in days the binary diffs should be kept.
 		 * ============================
 		 *   type=>"vcs/svn" - Dumps a SVN repository, using the svnadmin export command. Needs svnadmin to be installed
+		 *                     and in PATH
+		 *   path            - The local filesystem path where the repository is located
+		 * ============================  
+		 *   type=>"vcs/hg"  - Dumps a HG repository, using the hg clone --pull command. Needs hg to be installed
 		 *                     and in PATH
 		 *   path            - The local filesystem path where the repository is located
 		 * ============================  
@@ -106,7 +112,11 @@
 		 *   user            - MySQL user; default "root"
 		 *   password        - MySQL user's password
 		 *   dbs             - Collection of databases to be dumped; can be specified as a comma-separated string or
-		 *                     as a string array
+		 *                     as a string array; if empty, all databases are exported
+		 * ============================
+		 *   type=>"db/sqlite" - Dumps sqlite databases using the sqlite3 dump commandtool. Requires sqlite3 to be installed 
+		 *                     and in PATH
+		 *   path            - The local filesystem path where the DB is located
 		 * ============================
 		 *   type=>"file"    - Backs up a local file or folder
 		 *   path            - Local path to file/directory; rooted, no trailing slash
@@ -116,6 +126,14 @@
 			array(
 				'type'=>'vcs/svn',
 				'path'=>'/var/svn',
+			),
+			array(
+				'type'=>'vcs/hg',
+				'path'=>'/var/hg/somerepo',
+			),
+			array(
+				'type'=>'db/sqlite',
+				'path'=>'var/dbs/somedb.sqlite'
 			),
 			array(
 				'type'=>'db/mysql',
@@ -142,7 +160,8 @@
 			array(
 				'type'=>'file',
 				'mode'=>'incremental',
-				'path'=>'/home/belvedai'
+				'path'=>'/home/someuser',
+				'purgeAfter'=>31
 			)
 		)
 	);
