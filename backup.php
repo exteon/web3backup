@@ -656,7 +656,7 @@
 		}
 		if($incremental['purgeAfter']){
 			echo "     Purging diffs older than {$incremental['purgeAfter']} days\n";
-			$command='rdiff-backup --remove-older-than '.escapeshellarg($incremental['purgeAfter'].'D').' '.escapeshellarg($toFull).' 2>&1';
+			$command='rdiff-backup --force --remove-older-than '.escapeshellarg($incremental['purgeAfter'].'D').' '.escapeshellarg($toFull).' 2>&1';
 			passthru($command,$ret);
 			if($ret){
 				echo "!!!! ERROR: rdiff reported errors\n";
