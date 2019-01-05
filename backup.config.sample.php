@@ -97,6 +97,8 @@
 		 *                     regular rotated backups are used. 
 		 *                     When using "incremental" backups, you can specify one more parameter: "purgeAfter"
 		 *                     is the interval in days the binary diffs should be kept.
+		 *   purgeAfter      - If "mode" is "incremental" (and valid), this specifies the interval in days for which 
+		 *                     the binary diffs should be kept
 		 * ============================
 		 *   type=>"vcs/svn" - Dumps a SVN repository, using the svnadmin export command. Needs svnadmin to be installed
 		 *                     and in PATH
@@ -120,6 +122,18 @@
 		 * ============================
 		 *   type=>"file"    - Backs up a local file or folder
 		 *   path            - Local path to file/directory; rooted, no trailing slash
+		 *   exceptions_glob - Array of strings containing paths (relative to the path, no leading slash) that should
+		 *                     be excepted from the backup, in glob match format.
+		 *   exceptions_regexp - Array of strings containing paths (relative to the path, no leading slash) that should
+		 *                     be excepted from the backup. The paths are in regexp format (not glob). Note that expressions
+		 *                     will be terminated ("$" added) so you MUST add regexp syntax to match the whole filename 
+		 *                     (i.e. trailing "/.*") if you intend to except whole directories.
+		 *                     NOTE: For non-incremental backups "exceptions" is not supported yet, use "exceptions_glob"
+		 *                         instead!
+		 *                     Examples:
+		 *                         'Temp/.*'               - excludes the whole "Temp" folder
+		 *                         '.*\/\\.svn/.*'          - excludes every ".svn" folder in any subdirectory
+		 *                         '.*\/[^/]*\\.bak(/.*)?'  - excludes files or directories named "*.bak" in any subdirectory
 		 * ============================ 
 		 */
 		'what'=>array(
@@ -161,7 +175,10 @@
 				'type'=>'file',
 				'mode'=>'incremental',
 				'path'=>'/home/someuser',
-				'purgeAfter'=>31
+				'purgeAfter'=>31,
+				'exceptions_glob'=>[
+					'**/.exclude'
+				]
 			)
 		)
 	);

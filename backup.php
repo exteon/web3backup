@@ -466,13 +466,16 @@
 					$incrementals[]=array(
 						'from'=>$path,
 						'to'=>'files/'.keyFromPath($path),
-						'purgeAfter'=>$what['purgeAfter']
+						'purgeAfter'=>$what['purgeAfter'],
+						'exceptions_regexp'=>$what['exceptions_regexp'],
+						'exceptions_glob'=>$what['exceptions_glob']
 					);
 				} else {
 					$archivables[]=array(
 						'from'=>$path,
 						'to'=>'files/'.keyFromPath($path),
-						'strip'=>0
+						'strip'=>0,
+						'exceptions_glob'=>$what['exceptions_glob']
 					);
 				}
 				break;
@@ -517,6 +520,11 @@
 				$destFn=$dateDirName.'/'.$archivable['to'].'.tar.gz';
 				echo "---- Creating $destFn\n";
 				$command='tar';
+				if($archivable['exceptions_glob']){
+					foreach($archivable['exceptions_glob'] as $exception){
+						$command.=' --exclude='.escapeshellarg($exception);
+					}
+				}
 				if($archivable['strip']){
 					$command.=' --strip-components='.$archivable['strip'];
 				}
@@ -525,6 +533,7 @@
 				$command.=' ';
 				$command.=escapeshellarg($archivable['from']);
 				$command.=' 2>&1';
+				echo "$command\n";
 				passthru($command,$ret);
 				if($ret){
 					echo "!!!! tar command failed\n";
@@ -647,7 +656,18 @@
 			}
 		}
 		$command='rdiff-backup --backup-mode --print-statistics --no-compare-inode';
+		if(is_array($incremental['exceptions_regexp'])){
+		    foreach($incremental['exceptions_regexp'] as $exception){
+				$command.=' --exclude-regexp '.escapeshellarg('^'.preg_quote(basename($incremental['from'])).'/'.$exception.'$');
+		    }
+		}
+		if(is_array($incremental['exceptions_glob'])){
+		    foreach($incremental['exceptions_glob'] as $exception){
+				$command.=' --exclude '.escapeshellarg(preg_quote(basename($incremental['from'])).'/'.$exception);
+		    }
+		}
 		$command.=' '.escapeshellarg($incremental['from']).' '.escapeshellarg($toFull).' 2>&1';
+		echo "$command\n";
 		passthru($command,$ret);
 		if($ret){
 			echo "!!!! ERROR: rdiff reported errors\n";

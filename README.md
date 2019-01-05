@@ -15,6 +15,9 @@ Its main features are:
 **Changelog**
 We don't (yet) use semantic versioning numbers for this project. Version numbers consist of the date a version is published on github.
 
+<u>v2019-01-05</u>
+* Added exceptions_glob, exceptions_regexp parameters for "file" backups
+
 <u>v2014-12-09</u>
 * Added support for SQLite and Hg
 * Added possibility to export all MySQL databases by leaving the dbs field empty
@@ -122,6 +125,8 @@ To set up this kind of automated backup, you must first edit the backup.config.p
 			 *                     regular rotated backups are used. 
 			 *                     When using "incremental" backups, you can specify one more parameter: "purgeAfter"
 			 *                     is the interval in days the binary diffs should be kept.
+			 *   purgeAfter      - If "mode" is "incremental" (and valid), this specifies the interval in days for which 
+			 *                     the binary diffs should be kept
 			 * ============================
 			 *   type=>"vcs/svn" - Dumps a SVN repository, using the svnadmin export command. Needs svnadmin to be installed
 			 *                     and in PATH
@@ -145,6 +150,18 @@ To set up this kind of automated backup, you must first edit the backup.config.p
 			 * ============================
 			 *   type=>"file"    - Backs up a local file or folder
 			 *   path            - Local path to file/directory; rooted, no trailing slash
+			 *   exceptions_glob - Array of strings containing paths (relative to the path, no leading slash) that should
+			 *                     be excepted from the backup, in glob match format.
+			 *   exceptions_regexp - Array of strings containing paths (relative to the path, no leading slash) that should
+			 *                     be excepted from the backup. The paths are in regexp format (not glob). Note that expressions
+			 *                     will be terminated ("$" added) so you MUST add regexp syntax to match the whole filename 
+			 *                     (i.e. trailing "/.*") if you intend to except whole directories.
+			 *                     NOTE: For non-incremental backups "exceptions" is not supported yet, use "exceptions_glob"
+			 *                         instead!
+			 *                     Examples:
+			 *                         'Temp/.*'               - excludes the whole "Temp" folder
+			 *                         '.*/\\.svn/.*'          - excludes every ".svn" folder in any subdirectory
+			 *                         '.*/[^/]*\\.bak(/.*)?'  - excludes files or directories named "*.bak" in any subdirectory
 			 * ============================ 
 			 */
 			'what'=>array(
@@ -186,7 +203,10 @@ To set up this kind of automated backup, you must first edit the backup.config.p
 					'type'=>'file',
 					'mode'=>'incremental',
 					'path'=>'/home/someuser',
-					'purgeAfter'=>31
+					'purgeAfter'=>31,
+					'exceptions_glob'=>[
+						'**/.exclude'
+					]
 				)
 			)
 		);
