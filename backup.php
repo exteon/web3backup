@@ -658,12 +658,12 @@
 		$command='rdiff-backup --backup-mode --print-statistics --no-compare-inode';
 		if(is_array($incremental['exceptions_regexp'])){
 		    foreach($incremental['exceptions_regexp'] as $exception){
-				$command.=' --exclude-regexp '.escapeshellarg('^'.preg_quote(basename($incremental['from'])).'/'.$exception.'$');
+				$command.=' --exclude-regexp '.escapeshellarg('^'.preg_quote($incremental['from']).'/'.$exception.'$');
 		    }
 		}
 		if(is_array($incremental['exceptions_glob'])){
 		    foreach($incremental['exceptions_glob'] as $exception){
-				$command.=' --exclude '.escapeshellarg(preg_quote(basename($incremental['from'])).'/'.$exception);
+				$command.=' --exclude '.escapeshellarg($incremental['from'].'/'.$exception);
 		    }
 		}
 		$command.=' '.escapeshellarg($incremental['from']).' '.escapeshellarg($toFull).' 2>&1';
