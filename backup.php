@@ -327,6 +327,7 @@
 							--disable-keys											\\
 							--extended-insert										\\
 							--hex-blob												\\
+							--host=".escapeshellarg($host)."						\\
 							--lock-tables											\\
 							--quote-names											\\
 							--quick													\\
@@ -368,6 +369,7 @@
 							--disable-keys											\\
 							--extended-insert										\\
 							--hex-blob												\\
+							--host=".escapeshellarg($host)."						\\
 							--lock-tables											\\
 							--quote-names											\\
 							--quick													\\
